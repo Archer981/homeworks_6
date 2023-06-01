@@ -22,13 +22,15 @@ from ads import views
 from ads.urls.ad import ad_patterns
 from ads.urls.category import category_patterns
 from homeworks_6 import settings
-from users.urls import user_patterns
+from users.urls.location import location_patterns
+from users.urls.user import user_patterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('ad/', include(ad_patterns)),
     path('cat/', include(category_patterns)),
     path('user/', include(user_patterns)),
+    path('location/', include(location_patterns)),
 ]
 
 if settings.DEBUG:
