@@ -24,6 +24,33 @@ class UserCreateView(CreateAPIView):
     serializer_class = UserCreateUpdateSerializer
 
 
+class UserListView(ListAPIView):
+    queryset = User.objects.prefetch_related('locations').annotate(
+        total_ads=Count('ad', filter=Q(ad__is_published=True))).order_by('username')
+    serializer_class = UserListSerializer
+    # pagination_class = UserPaginator
+
+
+class UserDetailView(RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserUpdateView(UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserCreateUpdateSerializer
+
+
+class UserDeleteView(DestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class LocationViewSet(ModelViewSet):
+    queryset = Location.objects.all()
+    serializer_class = LocationSerializer
+
+
 # @method_decorator(csrf_exempt, name='dispatch')
 # class UserCreateView(CreateView):
 #     model = User
@@ -37,12 +64,6 @@ class UserCreateView(CreateAPIView):
 #             new_user.locations.add(loc)
 #         return JsonResponse(new_user.serialize(), safe=False)
 
-
-class UserListView(ListAPIView):
-    queryset = User.objects.prefetch_related('locations').annotate(
-        total_ads=Count('ad', filter=Q(ad__is_published=True))).order_by('username')
-    serializer_class = UserListSerializer
-    # pagination_class = UserPaginator
 
 # class UserListView(ListView):
 #     queryset = User.objects.prefetch_related('locations').annotate(
@@ -60,22 +81,12 @@ class UserListView(ListAPIView):
 #         }, safe=False)
 
 
-class UserDetailView(RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-
 # class UserDetailView(DetailView):
 #     model = User
 #
 #     def get(self, request, **kwargs):
 #         detail_user = self.get_object()
 #         return JsonResponse(detail_user.serialize(), safe=False)
-
-
-class UserUpdateView(UpdateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserCreateUpdateSerializer
 
 
 # @method_decorator(csrf_exempt, name='dispatch')
@@ -102,10 +113,6 @@ class UserUpdateView(UpdateAPIView):
 #         return JsonResponse(self.object.serialize(), safe=False)
 
 
-class UserDeleteView(DestroyAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
 # @method_decorator(csrf_exempt, name='dispatch')
 # class UserDeleteView(DeleteView):
 #     model = User
@@ -114,8 +121,3 @@ class UserDeleteView(DestroyAPIView):
 #     def delete(self, request, *args, **kwargs):
 #         super().delete(request, *args, **kwargs)
 #         return JsonResponse({'Status': 'OK'}, safe=False, status=200)
-
-
-class LocationViewSet(ModelViewSet):
-    queryset = Location.objects.all()
-    serializer_class = LocationSerializer

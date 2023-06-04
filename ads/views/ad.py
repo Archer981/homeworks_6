@@ -6,18 +6,36 @@ from django.shortcuts import render, get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, CreateView, DeleteView, UpdateView
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from ads.models import Ad, Category
-from ads.serializers import AdListSerializer, AdSerializer
+from ads.permissions import IsOwner, IsStaff
+from ads.serializers import AdListSerializer, AdSerializer, AdDetailSerializer, AdCreateSerializer
 # from homeworks_6.settings import TOTAL_ON_PAGE
 from users.models import User
 
 
 class AdViewSet(ModelViewSet):
     queryset = Ad.objects.all().order_by('-price')
-    serializers = {'list': AdListSerializer}
+    serializers = {
+        'list': AdListSerializer,
+        'retrieve': AdDetailSerializer,
+        'create': AdCreateSerializer,
+    }
     default_serializer = AdSerializer
+    permissions = {
+        'create': [IsAuthenticated],
+        'retrieve': [IsAuthenticated],
+        'update': [IsOwner | IsStaff],
+        'destroy': [IsOwner | IsStaff],
+        'partial_update': [IsOwner | IsStaff],
+    }
+    default_permission = [AllowAny]
+
+    def get_permissions(self):
+        self.permission_classes = self.permissions.get(self.action, self.default_permission)
+        return super().get_permissions()
 
     def get_serializer_class(self):
         return self.serializers.get(self.action, self.default_serializer)
@@ -40,6 +58,17 @@ class AdViewSet(ModelViewSet):
             self.queryset = self.queryset.filter(price__lte=price_to)
         return super().list(request, *args, **kwargs)
 
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AdUploadImageView(UpdateView):
+    model = Ad
+    fields = '__all__'
+
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
+        self.object.image = request.FILES.get('image')
+        self.object.save()
+        return JsonResponse(self.object.serialize(), safe=False)
 
 # @method_decorator(csrf_exempt, name='dispatch')
 # class AdCreateView(CreateView):
@@ -108,15 +137,3 @@ class AdViewSet(ModelViewSet):
 #     def delete(self, request, *args, **kwargs):
 #         super().delete(request, *args, **kwargs)
 #         return JsonResponse({'Status': 'OK'}, safe=False, status=200)
-
-
-@method_decorator(csrf_exempt, name='dispatch')
-class AdUploadImageView(UpdateView):
-    model = Ad
-    fields = '__all__'
-
-    def post(self, request, *args, **kwargs):
-        super().post(request, *args, **kwargs)
-        self.object.image = request.FILES.get('image')
-        self.object.save()
-        return JsonResponse(self.object.serialize(), safe=False)
