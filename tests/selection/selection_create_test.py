@@ -5,7 +5,8 @@ from tests.factories import AdFactory
 
 
 @pytest.mark.django_db
-def test_selection_create(client, user, access_token):
+def test_selection_create(client, user_with_access_token):
+    user, token = user_with_access_token
     ad_list = AdFactory.create_batch(4)
 
     data = {
@@ -14,10 +15,10 @@ def test_selection_create(client, user, access_token):
     }
     expected_data = {
         "id": 1,
-        "owner": "test",
+        "owner": user.username,
         "name": "Подборка",
         "items": [ad.pk for ad in ad_list]
     }
-    response = client.post('/selection/', data=data, HTTP_AUTHORIZATION=f'Bearer {access_token}')
+    response = client.post('/selection/', data=data, HTTP_AUTHORIZATION=f'Bearer {token}')
     assert response.status_code == status.HTTP_201_CREATED
     assert response.data == expected_data
